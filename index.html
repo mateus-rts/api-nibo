@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RTS · Nibo → Supabase</title>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --black:#1A1A1B;--green:#3D754E;--gl:#5a9e6f;--gl2:#a3d9b1;
+  --ow:#F9F5EF;--gray:#2e2e2f;--gray2:#3d3d3e;--muted:#a0a0a0;
+  --border:rgba(255,255,255,0.08);--warn:#f0b429;--danger:#f87171;
+}
+body{font-family:'Ubuntu',sans-serif;background:var(--black);color:var(--ow);min-height:100vh;padding:2rem;}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:2rem;}
+.logo{display:flex;align-items:center;gap:8px;}
+.brand{font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;}
+.brand-sub{font-size:10px;color:var(--muted);}
+h1{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;}
+.sub{font-size:12px;color:var(--muted);}
+.container{max-width:860px;margin:0 auto;}
+.card{background:var(--gray);border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin-bottom:1rem;}
+.card-title{font-size:13px;font-weight:500;color:var(--ow);margin-bottom:1rem;display:flex;align-items:center;gap:8px;}
+.gbar{width:20px;height:3px;background:var(--green);border-radius:2px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.form-row.single{grid-template-columns:1fr;}
+label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;}
+input,select{width:100%;background:var(--gray2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--ow);font-family:'Ubuntu',sans-serif;font-size:13px;outline:none;transition:border-color .15s;}
+input:focus,select:focus{border-color:var(--green);}
+input[type=password]{letter-spacing:2px;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:6px;border:none;cursor:pointer;font-family:'Ubuntu',sans-serif;font-size:13px;font-weight:500;transition:all .15s;}
+.btn-primary{background:var(--green);color:#fff;}
+.btn-primary:hover{background:var(--gl);}
+.btn-primary:disabled{background:#3a3a3b;color:var(--muted);cursor:not-allowed;}
+.btn-sm{padding:6px 14px;font-size:11px;}
+.log{background:#111112;border-radius:6px;padding:1rem;font-size:11px;font-family:'Courier New',monospace;min-height:120px;max-height:300px;overflow-y:auto;line-height:1.8;}
+.log-line{display:block;margin-bottom:2px;}
+.log-ok{color:var(--gl);}
+.log-err{color:var(--danger);}
+.log-info{color:var(--muted);}
+.log-warn{color:var(--warn);}
+.results-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:1rem;}
+.results-table th{text-align:left;padding:6px 10px;color:var(--muted);font-weight:400;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;}
+.results-table td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--ow);}
+.results-table tr:last-child td{border-bottom:none;}
+.badge{font-size:9px;padding:2px 7px;border-radius:99px;font-weight:500;}
+.badge-adm{background:rgba(96,165,250,0.15);color:#60a5fa;}
+.badge-pessoas{background:rgba(167,139,250,0.15);color:#a78bfa;}
+.badge-sistemas{background:rgba(52,211,153,0.15);color:#34d399;}
+.badge-consol{background:rgba(251,191,36,0.15);color:#fbbf24;}
+.badge-comercial{background:rgba(251,113,133,0.15);color:#fb7185;}
+.badge-outros{background:rgba(160,160,160,0.15);color:#a0a0a0;}
+.total-row td{color:var(--gl);font-weight:500;border-top:1px solid var(--green);}
+.steps{display:flex;gap:8px;margin-bottom:1.5rem;}
+.step{flex:1;padding:12px;background:var(--gray);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:10px;color:var(--muted);position:relative;}
+.step.active{border-color:var(--green);color:var(--gl);}
+.step.done{border-color:rgba(90,158,111,0.3);background:rgba(90,158,111,0.07);}
+.step-num{font-size:16px;font-weight:700;display:block;margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <svg width="28" height="28" viewBox="0 0 167 158" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M164.94 60.94C165.9 61.65 166.3 62.9 165.92 64.04L135.81 154.47L135.49 155.45C135.11 156.59 134.03 157.36 132.83 157.35L131.86 157.34L33.25 156.65H32.73C31.53 156.64 30.46 155.86 30.1 154.71L29.96 154.26L0.15 60.43L0.13 60.37C-0.23 59.24 0.19 58.01 1.15 57.33L81.74 0.59L82.58 0L83.37 0.59L122.44 29.76L121.99 31.2L82.58 3.42L6.05 60.59L35.75 149.71L128.8 149.05L158.36 56.07L164.94 60.94Z" fill="white"/>
+      <path d="M150.86 50.52L122.35 135.98L122.02 136.97C121.65 138.11 120.57 138.87 119.36 138.86L118.39 138.85L46.71 138.16L46.17 138.15C44.97 138.14 43.91 137.36 43.55 136.21L43.41 135.77L21.92 67.49L21.89 67.42C21.54 66.29 21.96 65.07 22.93 64.39L81.74 23.45L81.78 23.42C82.26 23.08 82.9 23.1 83.37 23.45L116.56 48.33L116.1 49.8L82.58 26.28L27.82 67.64L49.19 131.21L115.34 130.57L142.67 44.46L150.86 50.52Z" fill="rgba(255,255,255,0.65)"/>
+      <path d="M134.06 38.09L107.95 116.19L107.61 117.18C107.23 118.33 106.15 119.1 104.94 119.08L103.99 119.06L61.12 118.37L60.56 118.36C59.36 118.34 58.31 117.55 57.96 116.41C55.63 108.84 47.5 82.43 45.19 74.93C44.85 73.81 45.27 72.61 46.24 71.95L81.74 47.91L81.81 47.87C82.28 47.55 82.91 47.57 83.37 47.91L110.27 68.23L109.81 69.68L82.6 50.75L51.14 75.17L63.59 111.4L100.93 110.8L125.87 32.03L134.06 38.09Z" fill="rgba(255,255,255,0.35)"/>
+    </svg>
+    <div>
+      <div class="brand">RTS PARTNERS</div>
+      <div class="brand-sub">INTEGRAÇÃO NIBO → SUPABASE</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step active" id="step1"><span class="step-num">1</span>Configurar</div>
+    <div class="step" id="step2"><span class="step-num">2</span>Buscar Nibo</div>
+    <div class="step" id="step3"><span class="step-num">3</span>Revisar</div>
+    <div class="step" id="step4"><span class="step-num">4</span>Salvar</div>
+  </div>
+
+  <!-- STEP 1: Config -->
+  <div class="card" id="card-config">
+    <div class="card-title"><div class="gbar"></div>Configuração</div>
+    <div class="form-row">
+      <div>
+        <label>Chave API Nibo</label>
+        <input type="password" id="nibo-key" placeholder="Cole sua chave aqui">
+      </div>
+      <div>
+        <label>Período</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <input type="date" id="data-ini" value="2026-04-01">
+          <input type="date" id="data-fim" value="2026-04-30">
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-primary" onclick="buscarNibo()">Buscar lançamentos do Nibo</button>
+      <span id="status-config" style="font-size:11px;color:var(--muted);"></span>
+    </div>
+  </div>
+
+  <!-- STEP 2: Log -->
+  <div class="card" id="card-log" style="display:none">
+    <div class="card-title"><div class="gbar"></div>Log</div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- STEP 3: Preview -->
+  <div class="card" id="card-preview" style="display:none">
+    <div class="card-title"><div class="gbar"></div>Preview — Custos encontrados</div>
+    <div class="log" id="log-preview" style="display:none;margin-bottom:12px;"></div>
+    <table class="results-table" id="table-custos"></table>
+    <div style="margin-top:8px;">
+      <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-bottom:8px;" onclick="toggleDetalhe()">Ver lançamentos detalhados</button>
+      <div id="detalhe" style="display:none;max-height:240px;overflow-y:auto;">
+        <table class="results-table" id="table-detalhe"></table>
+      </div>
+    </div>
+    <div style="margin-top:1rem;display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-primary" id="btn-salvar" onclick="salvarSupabase()">Salvar no Supabase</button>
+      <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--muted);" onclick="resetar()">Recomeçar</button>
+      <span id="status-save" style="font-size:11px;color:var(--muted);"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://zjhaprbilpoypwpwwxih.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__b6wXAjX79DSy2EFk_T9sA_Z0qjgNPjBfZMgfXFhlQ1Y_';
+
+// Mapeamento descrição → categoria
+// Mapeamento por CATEGORIA do Nibo (campo category da API)
+const CAT_MAP_NIBO = {
+  // Pessoas
+  'salarios, encargos e beneficios': 'pessoas',
+  'salários, encargos e benefícios': 'pessoas',
+  'pro-labore': 'pessoas', 'pró-labore': 'pessoas',
+  'pro labore': 'pessoas', 'pró labore': 'pessoas',
+  'plano de saude': 'pessoas', 'plano de saúde': 'pessoas',
+  'custos com educacao': 'pessoas', 'custos com educação': 'pessoas',
+  // ADM
+  'servicos contratados': 'adm', 'serviços contratados': 'adm',
+  'manutencao/decoracao': 'adm', 'manutenção/decoração': 'adm',
+  'manutencao': 'adm', 'manutenção': 'adm',
+  'energia/agua': 'adm', 'energia/ agua': 'adm',
+  'aluguel': 'adm', 'escritorio': 'adm', 'escritório': 'adm',
+  'material': 'adm', 'juridico': 'adm', 'jurídico': 'adm',
+  'marketing': 'adm', 'contabilidade': 'adm',
+  'condominio': 'adm', 'condomínio': 'adm', 'condominiais': 'adm',
+  'telefone': 'adm', 'cracha': 'adm', 'crachá': 'adm',
+  'decoracao': 'adm', 'decoração': 'adm',
+  'material de escritorio': 'adm', 'material de escritório': 'adm',
+  'telefone e internet': 'adm',
+  // Sistemas
+  'pbi': 'sistemas', 'notion': 'sistemas', 'google': 'sistemas',
+  'aws': 'sistemas', 'iaas': 'sistemas',
+  'mycapital': 'sistemas', 'microsoft': 'sistemas',
+  'custos com softwares': 'sistemas', 'assinatura eletronica': 'sistemas',
+  // Consolidação — mapeado por descrição abaixo via DESC_MAP
+  'regencia': 'consol', 'regência': 'consol', 'comdinheiro': 'consol',
+  // Comercial
+  'reembolso': 'comercial', 'reembolso/devolucao': 'comercial',
+  'reembolso/devolução': 'comercial', 'relacionamento': 'comercial',
+  'brinde': 'comercial',
+};
+
+// Mapeamento por DESCRIÇÃO exata (tem prioridade sobre categoria)
+const DESC_MAP = {
+  'ref servico de apoio administrativo': 'consol',  // Regência
+  'ref serviço de apoio administrativo': 'consol',
+  'ref licenciamento ou cessao do direito de uso do programa de computador': 'consol', // Comdinheiro
+  'ref licenciamento ou cessão do direito de uso do programa de computador': 'consol',
+  'ref ao aprecamento de ativos': 'consol',
+  'ref ao apreçamento de ativos': 'consol',
+  'ref bpo financeiro': 'sistemas',
+  'ref drink referente': 'comercial',
+  'ref almoco': 'comercial', 'ref almoço': 'comercial',
+  'ref servico de promocao de vendas': 'comercial',
+  'ref serviço de promoção de vendas': 'comercial',
+  'ref reembolso': 'comercial',
+};
+
+// Categorias a IGNORAR (não são custos operacionais)
+const CAT_IGNORAR = [
+  'despesas financeiras', 'transferencia', 'transferência',
+  'aplicacao', 'aplicação', 'investimento',
+  'pagamento de pis', 'pagamento de cofins', 'pagamento de iss',
+  'outras despesas',
+];
+
+// Palavras-chave na DESCRIÇÃO que identificam lançamentos a ignorar
+const DESC_IGNORAR = [
+  'pix enviado', 'bloq pix', 'ref adto',
+  'irpj', 'csll', 'cofins', 'dctfweb', 'iss rts', 'iss auge',
+  'cartao de credito', 'cartão de crédito', 'ref pis rts',
+];
+
+const CAT_MAP = CAT_MAP_NIBO; // compatibilidade
+
+function normalizar(s) {
+  return (String(s||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+}
+
+function deveIgnorar(categoria) {
+  const c = normalizar(categoria);
+  return CAT_IGNORAR.some(k => c.includes(normalizar(k)));
+}
+
+const TAGS_VALIDAS = ['adm','pessoas','sistemas','consol','comercial','outros'];
+
+function extrairTag(desc) {
+  // Lê [tag] no início da descrição — ex: "[consol] Ref serviço de apoio administrativo"
+  const m = (desc||'').match(/^\[([a-zA-Z]+)\]/);
+  if(!m) return null;
+  const tag = m[1].toLowerCase();
+  return TAGS_VALIDAS.includes(tag) ? tag : null;
+}
+
+function limparDescricao(desc) {
+  // Remove a tag da descrição para exibição
+  return (desc||'').replace(/^\[[a-zA-Z]+\]\s*/, '').trim();
+}
+
+function classificar(desc, categoria) {
+  // VIA 1: tag explícita na descrição — [adm], [consol], etc.
+  const tag = extrairTag(desc);
+  if(tag) return tag;
+
+  const d = normalizar(desc);
+
+  // VIA 2: DESC_MAP — mapeamentos específicos por trecho da descrição
+  for(const [k,v] of Object.entries(DESC_MAP)) {
+    if(d.includes(normalizar(k))) return v;
+  }
+
+  // VIA 3: categoria do Nibo
+  const catNorm = normalizar(categoria);
+  for(const [k,v] of Object.entries(CAT_MAP_NIBO)) {
+    if(catNorm === normalizar(k) || catNorm.includes(normalizar(k))) return v;
+  }
+
+  // VIA 4: palavra-chave na descrição
+  for(const [k,v] of Object.entries(CAT_MAP_NIBO)) {
+    if(d.includes(normalizar(k))) return v;
+  }
+
+  return 'outros';
+}
+
+let dadosCustos = [];
+let dadosReceita = [];
+
+function log(msg, tipo='info') {
+  const el = document.getElementById('log');
+  const line = document.createElement('span');
+  line.className = `log-line log-${tipo}`;
+  const icon = tipo==='ok'?'✓ ':tipo==='err'?'✗ ':tipo==='warn'?'⚠ ':'› ';
+  line.textContent = icon + msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setStep(n) {
+  for(let i=1;i<=4;i++) {
+    const el = document.getElementById('step'+i);
+    el.className = 'step' + (i<n?' done':i===n?' active':'');
+  }
+}
+
+async function buscarNibo() {
+  const key   = document.getElementById('nibo-key').value.trim();
+  const ini   = document.getElementById('data-ini').value;
+  const fim   = document.getElementById('data-fim').value;
+  if(!key){ alert('Informe a chave API do Nibo'); return; }
+
+  document.getElementById('card-log').style.display='block';
+  document.getElementById('log').innerHTML='';
+  setStep(2);
+
+  log(`Período: ${ini} a ${fim}`);
+  log('Conectando ao Nibo...');
+
+  // Nibo não permite CORS direto do browser — usando proxy público para contornar CORS
+  const base = 'https://api.nibo.com.br/empresas/v1';
+  const filter = `dueDate ge ${ini} and dueDate le ${fim}`;
+
+  const PROXIES = [
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  ];
+
+  async function fetchNibo(rota) {
+    const url = `${base}/${rota}?apitoken=${key}&$filter=${encodeURIComponent(filter)}&$orderby=dueDate&$top=200`;
+    for(const makeProxy of PROXIES) {
+      try {
+        const proxy = makeProxy(url);
+        const resp = await fetch(proxy);
+        const text = await resp.text();
+        // allorigins envolve em {contents: "..."}
+        let jsonStr = text;
+        try { const wrap = JSON.parse(text); if(wrap.contents) jsonStr = wrap.contents; } catch(e){}
+        const json = JSON.parse(jsonStr);
+        return json.items || (Array.isArray(json)?json:[]);
+      } catch(e) {
+        log(`Proxy falhou para ${rota}, tentando próximo...`, 'warn');
+      }
+    }
+    log(`Erro em ${rota}: todos os proxies falharam`, 'err');
+    return null;
+  }
+
+  log('Buscando créditos (receita)...');
+  const creditos = await fetchNibo('schedules/credit');
+  if(creditos === null) {
+    log('Falha ao buscar créditos', 'err');
+  } else {
+    log(`${creditos.length} créditos encontrados`, 'ok');
+    dadosReceita = creditos;
+  }
+
+  log('Buscando débitos (custos)...');
+  const debitos = await fetchNibo('schedules/debit');
+  if(debitos === null) {
+    log('Falha ao buscar débitos', 'err');
+  } else {
+    log(`${debitos.length} débitos encontrados`, 'ok');
+  }
+
+  if(!debitos && !creditos) {
+    log('Não foi possível buscar dados. Verifique a chave do Nibo.', 'err');
+    return;
+  }
+
+  // Filtrar e montar custos — excluir categorias não operacionais
+  dadosCustos = (debitos||[])
+    .filter(d => {
+      const catRaw = d.categoryName || d.category || '';
+      const cat = typeof catRaw === 'object' ? (catRaw.name || catRaw.description || '') : catRaw;
+      const descRaw = normalizar(d.description || d.name || '');
+      if(DESC_IGNORAR.some(k => descRaw.includes(normalizar(k)))) return false;
+      return !deveIgnorar(cat);
+    })
+    .map(d => ({
+      mes:       ini.substring(0,7)+'-01',
+      categoria: classificar(d.description||d.name||'', typeof (d.categoryName||d.category||'')==='object' ? ((d.categoryName||d.category||'').name||'') : (d.categoryName||d.category||'')),
+      realizado: Math.abs(parseFloat(d.value||d.amount||0)),
+      orcado:    0,
+      descricao: (typeof (d.categoryName||d.category||'')==='object' ? ((d.categoryName||d.category||'').name||'') : (d.categoryName||d.category||'')) + ' | ' + limparDescricao(d.description||d.name||''),
+    }));
+
+  // Mostrar preview
+  mostrarPreview(debitos||[]);
+  setStep(3);
+}
+
+function mostrarPreview(debitos) {
+  document.getElementById('card-preview').style.display='block';
+
+  // Agrupar por categoria
+  const totais = {};
+  for(const r of dadosCustos) {
+    totais[r.categoria] = (totais[r.categoria]||0) + r.realizado;
+  }
+
+  let html = `<thead><tr>
+    <th>Categoria</th><th>Qtd lançamentos</th><th style="text-align:right">Total</th>
+  </tr></thead><tbody>`;
+
+  const contagem = {};
+  for(const r of dadosCustos) contagem[r.categoria]=(contagem[r.categoria]||0)+1;
+
+  let grand = 0;
+  for(const [cat, total] of Object.entries(totais).sort()) {
+    grand += total;
+    html += `<tr>
+      <td><span class="badge badge-${cat}">${cat}</span></td>
+      <td>${contagem[cat]} lançamentos</td>
+      <td style="text-align:right">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+    </tr>`;
+  }
+  html += `<tr class="total-row">
+    <td>Total</td><td>${dadosCustos.length} lançamentos</td>
+    <td style="text-align:right">R$ ${grand.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+  </tr></tbody>`;
+
+  document.getElementById('table-custos').innerHTML = html;
+  log('Preview pronto — revise e confirme para salvar', 'ok');
+}
+
+async function salvarSupabase() {
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true;
+  document.getElementById('status-save').textContent = 'Salvando...';
+  setStep(4);
+
+  // Remover campo descricao antes de salvar (não é coluna da tabela)
+  const rows = dadosCustos.map(({descricao, ...r}) => r);
+
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/custos`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify(rows),
+  });
+
+  if(resp.ok || resp.status===201) {
+    document.getElementById('status-save').style.color='var(--gl)';
+    document.getElementById('status-save').textContent = `✓ ${rows.length} registros salvos no Supabase!`;
+    log(`${rows.length} custos inseridos no Supabase com sucesso!`, 'ok');
+  } else {
+    const err = await resp.text();
+    document.getElementById('status-save').style.color='var(--danger)';
+    document.getElementById('status-save').textContent = '✗ Erro ao salvar';
+    log(`Erro Supabase: ${resp.status} — ${err}`, 'err');
+    btn.disabled = false;
+  }
+}
+
+function toggleDetalhe() {
+  const el = document.getElementById('detalhe');
+  if(el.style.display === 'none') {
+    // Build detail table
+    let html = '<thead><tr><th>Categoria Nibo</th><th>Categoria RTS</th><th style="text-align:right">Valor</th></tr></thead><tbody>';
+    for(const r of dadosCustos) {
+      html += `<tr>
+        <td style="font-size:10px;color:var(--muted);">${r.descricao}</td>
+        <td><span class="badge badge-${r.categoria}">${r.categoria}</span></td>
+        <td style="text-align:right">R$ ${r.realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      </tr>`;
+    }
+    html += '</tbody>';
+    document.getElementById('table-detalhe').innerHTML = html;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function resetar() {
+  dadosCustos=[]; dadosReceita=[];
+  document.getElementById('card-log').style.display='none';
+  document.getElementById('card-preview').style.display='none';
+  document.getElementById('log').innerHTML='';
+  document.getElementById('btn-salvar').disabled=false;
+  document.getElementById('status-save').textContent='';
+  setStep(1);
+}
+</script>
+</body>
+</html>
