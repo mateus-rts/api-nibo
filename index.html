@@ -689,8 +689,18 @@ async function buscarReceita() {
   if(!creditos) { rlog('Falha ao buscar receita', 'err'); return; }
   rlog(`${creditos.length} créditos encontrados`, 'ok');
 
+  // Filtrar rendimentos de aplicação
+  const creditosFiltrados = creditos.filter(d => {
+    const catRaw = d.categoryName || d.category || '';
+    const cat = normalizar(typeof catRaw === 'object' ? (catRaw.name || '') : catRaw);
+    const desc = normalizar(d.description || d.name || '');
+    if(cat.includes('rendimento') || desc.includes('rendimento') || desc.includes('valor de rendimento')) return false;
+    return true;
+  });
+  rlog(`${creditos.length - creditosFiltrados.length} rendimentos de aplicação ignorados`, 'info');
+
   // Montar dados — tudo começa como consultoria
-  dadosReceita2 = creditos.map(d => {
+  dadosReceita2 = creditosFiltrados.map(d => {
     const catRaw = d.categoryName || d.category || '';
     const cat = typeof catRaw === 'object' ? (catRaw.name || '') : catRaw;
     const desc = d.description || d.name || '';
