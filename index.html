@@ -689,7 +689,7 @@ async function buscarReceita() {
   if(!creditos) { rlog('Falha ao buscar receita', 'err'); return; }
   rlog(`${creditos.length} créditos encontrados`, 'ok');
 
-  // Filtrar rendimentos de aplicação
+  // Filtrar rendimentos de aplicação (qualquer empresa)
   const creditosFiltrados = creditos.filter(d => {
     const catRaw = d.categoryName || d.category || '';
     const cat = normalizar(typeof catRaw === 'object' ? (catRaw.name || '') : catRaw);
@@ -697,21 +697,33 @@ async function buscarReceita() {
     if(cat.includes('rendimento') || desc.includes('rendimento') || desc.includes('valor de rendimento')) return false;
     return true;
   });
-  rlog(`${creditos.length - creditosFiltrados.length} rendimentos de aplicação ignorados`, 'info');
+  rlog(`${creditos.length - creditosFiltrados.length} rendimentos ignorados`, 'info');
 
-  // Montar dados — tudo começa como consultoria
+  // Montar dados com empresa detectada pela conta
   dadosReceita2 = creditosFiltrados.map(d => {
     const catRaw = d.categoryName || d.category || '';
     const cat = typeof catRaw === 'object' ? (catRaw.name || '') : catRaw;
     const desc = d.description || d.name || '';
-    // Tag explícita tem prioridade
+    const contaRaw = d.accountName || d.account || (typeof d.bankAccount === 'object' ? (d.bankAccount?.name || d.bankAccount?.description || '') : (d.bankAccount || ''));
+    const conta = normalizar(typeof contaRaw === 'object' ? (contaRaw.name || contaRaw.description || JSON.stringify(contaRaw)) : String(contaRaw||''));
+
+    // Detectar empresa pela conta
+    let empresa = 'RTS';
+    if(conta.includes('auge')) empresa = 'AUGE';
+    else if(conta.includes('opc')) empresa = 'OPC';
+
+    // Categoria
     const tag = extrairTag(desc);
     let categoria = tag || 'consultoria';
+    if(empresa === 'AUGE') categoria = tag || 'crossell';
+    if(empresa === 'OPC') categoria = tag || 'distribuicao';
+
     return {
       mes: ini.substring(0,7)+'-01',
+      empresa,
       categoria,
       realizado: Math.abs(parseFloat(d.value||d.amount||0)),
-      descricao: (cat ? cat + ' | ' : '') + limparDescricao(desc),
+      descricao: (cat ? cat + ' | ' : '') + limparDescricao(desc) + (conta ? ' [' + conta + ']' : ''),
       removido: false,
     };
   });
@@ -734,25 +746,40 @@ function recalcularResumoReceita() {
     contagem[r.categoria] = (contagem[r.categoria]||0) + 1;
   }
   const ativos = dadosReceita2.filter(r=>!r.removido);
-  let html = `<thead><tr><th>Categoria</th><th>Qtd lançamentos</th><th style="text-align:right">Total</th></tr></thead><tbody>`;
+  // Agrupar por empresa+categoria
+  const porEmp = {};
+  for(const r of ativos) {
+    const k = r.empresa;
+    if(!porEmp[k]) porEmp[k] = {total:0, count:0};
+    porEmp[k].total += r.realizado;
+    porEmp[k].count++;
+  }
+  let html = `<thead><tr><th>Empresa</th><th>Categoria</th><th>Qtd</th><th style="text-align:right">Total</th></tr></thead><tbody>`;
   let grand = 0;
   for(const [cat, total] of Object.entries(totais).sort()) {
     grand += total;
-    html += `<tr><td><span class="badge badge-${cat}">${cat}</span></td><td>${contagem[cat]} lançamentos</td><td style="text-align:right">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`;
+    html += `<tr><td></td><td><span class="badge badge-${cat}">${cat}</span></td><td>${contagem[cat]}</td><td style="text-align:right">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`;
   }
-  html += `<tr class="total-row"><td>Total</td><td>${ativos.length} lançamentos</td><td style="text-align:right">R$ ${grand.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr></tbody>`;
+  // Linha por empresa
+  for(const [emp, v] of Object.entries(porEmp).sort()) {
+    const empColor = emp==='RTS'?'var(--gl)':emp==='AUGE'?'#f0b429':'var(--muted)';
+    html += `<tr style="border-top:1px solid var(--border)"><td style="font-weight:500;color:${empColor}">${emp}</td><td></td><td>${v.count}</td><td style="text-align:right;color:${empColor}">R$ ${v.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`;
+  }
+  html += `<tr class="total-row"><td colspan="2">Total</td><td>${ativos.length}</td><td style="text-align:right">R$ ${grand.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr></tbody>`;
   document.getElementById('rtable-resumo').innerHTML = html;
 }
 
 function toggleDetalheReceita() {
   const el = document.getElementById('rdetalhe');
   if(el.style.display === 'none') {
-    let html = `<thead><tr><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th><th></th></tr></thead><tbody>`;
+    let html = `<thead><tr><th>Descrição</th><th>Empresa</th><th>Categoria</th><th style="text-align:right">Valor</th><th></th></tr></thead><tbody>`;
     dadosReceita2.forEach((r, idx) => {
       if(r.removido) return;
       const opts = CAT_RECEITA.map(c => `<option value="${c}"${c===r.categoria?' selected':''}>${c}</option>`).join('');
+      const empColor = r.empresa==='RTS'?'var(--gl)':r.empresa==='AUGE'?'#f0b429':'var(--muted)';
       html += `<tr id="rrow-${idx}">
         <td style="font-size:10px;color:var(--muted);">${r.descricao}</td>
+        <td style="font-size:11px;font-weight:500;color:${empColor}">${r.empresa}</td>
         <td>
           <span class="badge badge-${r.categoria}" id="rbadge-${idx}">${r.categoria}</span>
           <select class="cat-select" onchange="mudarCatReceita(${idx}, this.value)">${opts}</select>
@@ -792,7 +819,7 @@ async function salvarReceita() {
 
   const rows = dadosReceita2
     .filter(r => !r.removido)
-    .map(({descricao, removido, ...r}) => r);
+    .map(({descricao, removido, ...r}) => r); // empresa já está em r
 
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/receita`, {
     method: 'POST',
