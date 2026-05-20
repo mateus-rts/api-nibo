@@ -51,6 +51,7 @@ input[type=password]{letter-spacing:2px;}
 .badge-consol{background:rgba(251,191,36,0.15);color:#fbbf24;}
 .badge-comercial{background:rgba(251,113,133,0.15);color:#fb7185;}
 .badge-outros{background:rgba(160,160,160,0.15);color:#a0a0a0;}
+.badge-estrategia{background:rgba(251,146,60,0.15);color:#fb923c;}
 .total-row td{color:var(--gl);font-weight:500;border-top:1px solid var(--green);}
 .cat-select{background:var(--gray2);border:1px solid var(--border);border-radius:4px;color:var(--ow);font-size:11px;padding:2px 6px;cursor:pointer;font-family:'Ubuntu',sans-serif;}
 .cat-select:focus{border-color:var(--green);outline:none;}
@@ -163,8 +164,11 @@ const CAT_MAP_NIBO = {
   'aws': 'sistemas', 'iaas': 'sistemas',
   'mycapital': 'sistemas', 'microsoft': 'sistemas',
   'custos com softwares': 'sistemas', 'assinatura eletronica': 'sistemas',
-  // Consolidação — mapeado por descrição abaixo via DESC_MAP
+  // Consolidação
   'regencia': 'consol', 'regência': 'consol', 'comdinheiro': 'consol',
+  'consolidacao': 'consol', 'consolidação': 'consol',
+  // Estratégia
+  'estrategia': 'estrategia', 'estratégia': 'estrategia',
   // Comercial
   'reembolso': 'comercial', 'reembolso/devolucao': 'comercial',
   'reembolso/devolução': 'comercial', 'relacionamento': 'comercial',
@@ -177,9 +181,10 @@ const DESC_MAP = {
   'ref serviço de apoio administrativo': 'consol',
   'ref licenciamento ou cessao do direito de uso do programa de computador': 'consol', // Comdinheiro
   'ref licenciamento ou cessão do direito de uso do programa de computador': 'consol',
-  'ref ao aprecamento de ativos': 'consol',
-  'ref ao apreçamento de ativos': 'consol',
+  'ref ao aprecamento de ativos': 'estrategia',
+  'ref ao apreçamento de ativos': 'estrategia',
   'ref bpo financeiro': 'sistemas',
+  'ref gestao': 'estrategia', 'ref gestão': 'estrategia',
   'ref drink referente': 'comercial',
   'ref almoco': 'comercial', 'ref almoço': 'comercial',
   'ref servico de promocao de vendas': 'comercial',
@@ -213,7 +218,7 @@ function deveIgnorar(categoria) {
   return CAT_IGNORAR.some(k => c.includes(normalizar(k)));
 }
 
-const TAGS_VALIDAS = ['adm','pessoas','sistemas','consol','comercial','outros'];
+const TAGS_VALIDAS = ['adm','pessoas','sistemas','consol','estrategia','comercial','outros'];
 
 function extrairTag(desc) {
   // Lê [tag] no início da descrição — ex: "[consol] Ref serviço de apoio administrativo"
@@ -514,7 +519,7 @@ function recalcularResumo() {
   document.getElementById('table-custos').innerHTML = html;
 }
 
-const CATS = ['adm','pessoas','sistemas','consol','comercial','outros'];
+const CATS = ['adm','pessoas','sistemas','consol','estrategia','comercial','outros'];
 
 function toggleDetalhe() {
   const el = document.getElementById('detalhe');
