@@ -57,6 +57,8 @@ input[type=password]{letter-spacing:2px;}
 .cat-select:focus{border-color:var(--green);outline:none;}
 .aprendeu{font-size:9px;color:var(--gl);margin-left:4px;}
 .reg-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(90,158,111,0.2);color:var(--gl);margin-left:4px;}
+.btn-x{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 4px;line-height:1;border-radius:3px;transition:color .15s;}
+.btn-x:hover{color:var(--danger);}
 .steps{display:flex;gap:8px;margin-bottom:1.5rem;}
 .step{flex:1;padding:12px;background:var(--gray);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:10px;color:var(--muted);position:relative;}
 .step.active{border-color:var(--green);color:var(--gl);}
@@ -134,7 +136,7 @@ input[type=password]{letter-spacing:2px;}
 
 <script>
 const SUPABASE_URL = 'https://zjhaprbilpoypwpwwxih.supabase.co';
-const SUPABASE_KEY = 'sb_publishable__b6wXAjX79DSy2EFk_T9sA_Z0qjgNPjBfZMgfXFhlQ1Y_';
+const SUPABASE_KEY = 'sb_publishable__b6wXAjX79DSy2EFk_T9sA_Z0qjgqAh';
 
 // Mapeamento descrição → categoria
 // Mapeamento por CATEGORIA do Nibo (campo category da API)
@@ -410,7 +412,7 @@ async function salvarSupabase() {
   setStep(4);
 
   // Remover campo descricao antes de salvar (não é coluna da tabela)
-  const rows = dadosCustos.map(({descricao, ...r}) => r);
+  const rows = dadosCustos.filter(r => !r.removido).map(({descricao, descricao_raw, removido, regra, ...r}) => r);
 
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/custos`, {
     method: 'POST',
@@ -531,9 +533,10 @@ function toggleDetalhe() {
       <th></th>
     </tr></thead><tbody>`;
     dadosCustos.forEach((r, idx) => {
+      if(r.removido) return;
       const opts = CATS.map(c => `<option value="${c}"${c===r.categoria?' selected':''}>${c}</option>`).join('');
       const regraTag = r.regra ? `<span class="reg-badge">regra</span>` : '';
-      html += `<tr>
+      html += `<tr id="row-${idx}">
         <td style="font-size:10px;color:var(--muted);">${r.descricao}${regraTag}</td>
         <td>
           <span class="badge badge-${r.categoria}" id="badge-${idx}">${r.categoria}</span>
@@ -542,7 +545,10 @@ function toggleDetalhe() {
           </select>
         </td>
         <td style="text-align:right">R$ ${r.realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-        <td><span class="aprendeu" id="info-${idx}"></span></td>
+        <td>
+          <span class="aprendeu" id="info-${idx}"></span>
+          <button class="btn-x" onclick="removerLancamento(${idx})" title="Remover lançamento">×</button>
+        </td>
       </tr>`;
     });
     html += '</tbody>';
@@ -551,6 +557,14 @@ function toggleDetalhe() {
   } else {
     el.style.display = 'none';
   }
+}
+
+function removerLancamento(idx) {
+  dadosCustos[idx].removido = true;
+  const row = document.getElementById(`row-${idx}`);
+  if(row) row.remove();
+  recalcularResumo();
+  log(`Lançamento removido: ${dadosCustos[idx].descricao}`, 'warn');
 }
 
 function resetar() {
