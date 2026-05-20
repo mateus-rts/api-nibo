@@ -52,6 +52,10 @@ input[type=password]{letter-spacing:2px;}
 .badge-comercial{background:rgba(251,113,133,0.15);color:#fb7185;}
 .badge-outros{background:rgba(160,160,160,0.15);color:#a0a0a0;}
 .total-row td{color:var(--gl);font-weight:500;border-top:1px solid var(--green);}
+.cat-select{background:var(--gray2);border:1px solid var(--border);border-radius:4px;color:var(--ow);font-size:11px;padding:2px 6px;cursor:pointer;font-family:'Ubuntu',sans-serif;}
+.cat-select:focus{border-color:var(--green);outline:none;}
+.aprendeu{font-size:9px;color:var(--gl);margin-left:4px;}
+.reg-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(90,158,111,0.2);color:var(--gl);margin-left:4px;}
 .steps{display:flex;gap:8px;margin-bottom:1.5rem;}
 .step{flex:1;padding:12px;background:var(--gray);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:10px;color:var(--muted);position:relative;}
 .step.active{border-color:var(--green);color:var(--gl);}
@@ -351,7 +355,11 @@ async function buscarNibo() {
       descricao: (typeof (d.categoryName||d.category||'')==='object' ? ((d.categoryName||d.category||'').name||'') : (d.categoryName||d.category||'')) + ' | ' + limparDescricao(d.description||d.name||''),
     }));
 
-  // Mostrar preview
+  // Carregar regras aprendidas e aplicar antes de mostrar preview
+  await carregarRegras();
+  // Guardar descricao_raw para matching de regras
+  for(const r of dadosCustos) r.descricao_raw = r.descricao;
+  aplicarRegrasAprendidas();
   mostrarPreview(debitos||[]);
   setStep(3);
 }
@@ -423,18 +431,115 @@ async function salvarSupabase() {
   }
 }
 
+// ── REGRAS APRENDIDAS ─────────────────────────────────────────────────────────
+let regrasCache = {}; // trecho → categoria, carregado do Supabase
+
+async function carregarRegras() {
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/regras_classificacao?select=trecho,categoria`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await resp.json();
+    regrasCache = {};
+    for(const r of (data||[])) regrasCache[normalizar(r.trecho)] = r.categoria;
+    log(`${data.length} regras carregadas do Supabase`, 'ok');
+  } catch(e) {
+    log('Aviso: não foi possível carregar regras salvas', 'warn');
+  }
+}
+
+function aplicarRegrasAprendidas() {
+  // Reaplicar regras do Supabase sobre dadosCustos
+  for(const r of dadosCustos) {
+    const d = normalizar(r.descricao_raw || r.descricao);
+    for(const [trecho, cat] of Object.entries(regrasCache)) {
+      if(d.includes(trecho)) { r.categoria = cat; r.regra = true; break; }
+    }
+  }
+}
+
+async function salvarRegra(idx) {
+  const r = dadosCustos[idx];
+  const novaCat = document.getElementById(`sel-${idx}`).value;
+  if(novaCat === r.categoria) return;
+
+  // Extrai trecho relevante da descrição (parte após o pipe)
+  const descParts = r.descricao.split('|');
+  const trecho = normalizar(descParts[descParts.length-1]).trim();
+  if(!trecho) return;
+
+  // Salva no Supabase (upsert por trecho)
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/regras_classificacao`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify({ trecho, categoria: novaCat }),
+  });
+
+  if(resp.ok || resp.status===201) {
+    // Atualiza localmente
+    r.categoria = novaCat;
+    r.regra = true;
+    regrasCache[trecho] = novaCat;
+    // Atualiza o badge na linha
+    const badge = document.getElementById(`badge-${idx}`);
+    if(badge) { badge.className = `badge badge-${novaCat}`; badge.textContent = novaCat; }
+    const info = document.getElementById(`info-${idx}`);
+    if(info) info.textContent = '✓ salvo';
+    log(`Regra salva: "${trecho}" → ${novaCat}`, 'ok');
+    // Atualiza tabela resumo
+    recalcularResumo();
+  } else {
+    log('Erro ao salvar regra', 'err');
+  }
+}
+
+function recalcularResumo() {
+  const totais = {}, contagem = {};
+  for(const r of dadosCustos) {
+    totais[r.categoria] = (totais[r.categoria]||0) + r.realizado;
+    contagem[r.categoria] = (contagem[r.categoria]||0) + 1;
+  }
+  let html = `<thead><tr><th>Categoria</th><th>Qtd lançamentos</th><th style="text-align:right">Total</th></tr></thead><tbody>`;
+  let grand = 0;
+  for(const [cat, total] of Object.entries(totais).sort()) {
+    grand += total;
+    html += `<tr><td><span class="badge badge-${cat}">${cat}</span></td><td>${contagem[cat]} lançamentos</td><td style="text-align:right">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`;
+  }
+  html += `<tr class="total-row"><td>Total</td><td>${dadosCustos.length} lançamentos</td><td style="text-align:right">R$ ${grand.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr></tbody>`;
+  document.getElementById('table-custos').innerHTML = html;
+}
+
+const CATS = ['adm','pessoas','sistemas','consol','comercial','outros'];
+
 function toggleDetalhe() {
   const el = document.getElementById('detalhe');
   if(el.style.display === 'none') {
-    // Build detail table
-    let html = '<thead><tr><th>Categoria Nibo</th><th>Categoria RTS</th><th style="text-align:right">Valor</th></tr></thead><tbody>';
-    for(const r of dadosCustos) {
+    let html = `<thead><tr>
+      <th>Descrição</th>
+      <th>Categoria</th>
+      <th style="text-align:right">Valor</th>
+      <th></th>
+    </tr></thead><tbody>`;
+    dadosCustos.forEach((r, idx) => {
+      const opts = CATS.map(c => `<option value="${c}"${c===r.categoria?' selected':''}>${c}</option>`).join('');
+      const regraTag = r.regra ? `<span class="reg-badge">regra</span>` : '';
       html += `<tr>
-        <td style="font-size:10px;color:var(--muted);">${r.descricao}</td>
-        <td><span class="badge badge-${r.categoria}">${r.categoria}</span></td>
+        <td style="font-size:10px;color:var(--muted);">${r.descricao}${regraTag}</td>
+        <td>
+          <span class="badge badge-${r.categoria}" id="badge-${idx}">${r.categoria}</span>
+          <select class="cat-select" id="sel-${idx}" onchange="salvarRegra(${idx})">
+            ${opts}
+          </select>
+        </td>
         <td style="text-align:right">R$ ${r.realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+        <td><span class="aprendeu" id="info-${idx}"></span></td>
       </tr>`;
-    }
+    });
     html += '</tbody>';
     document.getElementById('table-detalhe').innerHTML = html;
     el.style.display = 'block';
