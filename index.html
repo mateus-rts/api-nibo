@@ -64,6 +64,15 @@ input[type=password]{letter-spacing:2px;}
 .step.active{border-color:var(--green);color:var(--gl);}
 .step.done{border-color:rgba(90,158,111,0.3);background:rgba(90,158,111,0.07);}
 .step-num{font-size:16px;font-weight:700;display:block;margin-bottom:4px;}
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;}
+.tab{padding:10px 24px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;background:transparent;border-top:none;border-left:none;border-right:none;font-family:'Ubuntu',sans-serif;}
+.tab:hover{color:var(--ow);}
+.tab.active{color:var(--gl);border-bottom-color:var(--green);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.badge-consultoria{background:rgba(90,158,111,0.15);color:#5a9e6f;}
+.badge-crossell{background:rgba(240,180,41,0.15);color:#f0b429;}
+.badge-btg{background:rgba(96,165,250,0.15);color:#60a5fa;}
 </style>
 </head>
 <body>
@@ -80,14 +89,7 @@ input[type=password]{letter-spacing:2px;}
     </div>
   </div>
 
-  <div class="steps">
-    <div class="step active" id="step1"><span class="step-num">1</span>Configurar</div>
-    <div class="step" id="step2"><span class="step-num">2</span>Buscar Nibo</div>
-    <div class="step" id="step3"><span class="step-num">3</span>Revisar</div>
-    <div class="step" id="step4"><span class="step-num">4</span>Salvar</div>
-  </div>
-
-  <!-- STEP 1: Config -->
+  <!-- Config compartilhada -->
   <div class="card" id="card-config">
     <div class="card-title"><div class="gbar"></div>Configuração</div>
     <div class="form-row">
@@ -103,33 +105,77 @@ input[type=password]{letter-spacing:2px;}
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <button class="btn btn-primary" onclick="buscarNibo()">Buscar lançamentos do Nibo</button>
-      <span id="status-config" style="font-size:11px;color:var(--muted);"></span>
+  </div>
+
+  <!-- Abas -->
+  <div class="tabs">
+    <button class="tab active" onclick="trocarAba('custos')">Custos</button>
+    <button class="tab" onclick="trocarAba('receita')">Receita</button>
+  </div>
+
+  <!-- ABA CUSTOS -->
+  <div class="tab-panel active" id="panel-custos">
+    <div class="steps">
+      <div class="step active" id="step1"><span class="step-num">1</span>Configurar</div>
+      <div class="step" id="step2"><span class="step-num">2</span>Buscar Nibo</div>
+      <div class="step" id="step3"><span class="step-num">3</span>Revisar</div>
+      <div class="step" id="step4"><span class="step-num">4</span>Salvar</div>
     </div>
-  </div>
-
-  <!-- STEP 2: Log -->
-  <div class="card" id="card-log" style="display:none">
-    <div class="card-title"><div class="gbar"></div>Log</div>
-    <div class="log" id="log"></div>
-  </div>
-
-  <!-- STEP 3: Preview -->
-  <div class="card" id="card-preview" style="display:none">
-    <div class="card-title"><div class="gbar"></div>Preview — Custos encontrados</div>
-    <div class="log" id="log-preview" style="display:none;margin-bottom:12px;"></div>
-    <table class="results-table" id="table-custos"></table>
-    <div style="margin-top:8px;">
-      <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-bottom:8px;" onclick="toggleDetalhe()">Ver lançamentos detalhados</button>
-      <div id="detalhe" style="display:none;max-height:240px;overflow-y:auto;">
-        <table class="results-table" id="table-detalhe"></table>
+    <div style="margin-bottom:1rem;">
+      <button class="btn btn-primary" onclick="buscarNibo()">Buscar lançamentos do Nibo</button>
+      <span id="status-config" style="font-size:11px;color:var(--muted);margin-left:12px;"></span>
+    </div>
+    <div class="card" id="card-log" style="display:none">
+      <div class="card-title"><div class="gbar"></div>Log</div>
+      <div class="log" id="log"></div>
+    </div>
+    <div class="card" id="card-preview" style="display:none">
+      <div class="card-title"><div class="gbar"></div>Preview — Custos encontrados</div>
+      <table class="results-table" id="table-custos"></table>
+      <div style="margin-top:8px;">
+        <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-bottom:8px;" onclick="toggleDetalhe()">Ver lançamentos detalhados</button>
+        <div id="detalhe" style="display:none;max-height:280px;overflow-y:auto;">
+          <table class="results-table" id="table-detalhe"></table>
+        </div>
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-primary" id="btn-salvar" onclick="salvarSupabase()">Salvar no Supabase</button>
+        <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--muted);" onclick="resetar()">Recomeçar</button>
+        <span id="status-save" style="font-size:11px;color:var(--muted);"></span>
       </div>
     </div>
-    <div style="margin-top:1rem;display:flex;gap:8px;align-items:center;">
-      <button class="btn btn-primary" id="btn-salvar" onclick="salvarSupabase()">Salvar no Supabase</button>
-      <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--muted);" onclick="resetar()">Recomeçar</button>
-      <span id="status-save" style="font-size:11px;color:var(--muted);"></span>
+  </div>
+
+  <!-- ABA RECEITA -->
+  <div class="tab-panel" id="panel-receita">
+    <div class="steps">
+      <div class="step active" id="rstep1"><span class="step-num">1</span>Configurar</div>
+      <div class="step" id="rstep2"><span class="step-num">2</span>Buscar Nibo</div>
+      <div class="step" id="rstep3"><span class="step-num">3</span>Revisar</div>
+      <div class="step" id="rstep4"><span class="step-num">4</span>Salvar</div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <button class="btn btn-primary" onclick="buscarReceita()">Buscar receita do Nibo</button>
+      <span id="status-receita" style="font-size:11px;color:var(--muted);margin-left:12px;"></span>
+    </div>
+    <div class="card" id="rcard-log" style="display:none">
+      <div class="card-title"><div class="gbar"></div>Log</div>
+      <div class="log" id="rlog"></div>
+    </div>
+    <div class="card" id="rcard-preview" style="display:none">
+      <div class="card-title"><div class="gbar"></div>Preview — Receita encontrada</div>
+      <table class="results-table" id="rtable-resumo"></table>
+      <div style="margin-top:8px;">
+        <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-bottom:8px;" onclick="toggleDetalheReceita()">Ver lançamentos detalhados</button>
+        <div id="rdetalhe" style="display:none;max-height:280px;overflow-y:auto;">
+          <table class="results-table" id="rtable-detalhe"></table>
+        </div>
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-primary" id="rbtn-salvar" onclick="salvarReceita()">Salvar no Supabase</button>
+        <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--muted);" onclick="resetarReceita()">Recomeçar</button>
+        <span id="rstatus-save" style="font-size:11px;color:var(--muted);"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -565,6 +611,211 @@ function removerLancamento(idx) {
   if(row) row.remove();
   recalcularResumo();
   log(`Lançamento removido: ${dadosCustos[idx].descricao}`, 'warn');
+}
+
+// ── ABAS ──────────────────────────────────────────────────────────────────────
+function trocarAba(aba) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['custos','receita'][i] === aba);
+  });
+  document.getElementById('panel-custos').classList.toggle('active', aba==='custos');
+  document.getElementById('panel-receita').classList.toggle('active', aba==='receita');
+}
+
+// ── RECEITA ────────────────────────────────────────────────────────────────────
+let dadosReceita2 = [];
+
+const CAT_RECEITA = ['consultoria','crossell','btg'];
+
+function rlog(msg, tipo='info') {
+  const el = document.getElementById('rlog');
+  const line = document.createElement('span');
+  line.className = `log-line log-${tipo}`;
+  const icon = tipo==='ok'?'✓ ':tipo==='err'?'✗ ':tipo==='warn'?'⚠ ':'› ';
+  line.textContent = icon + msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setRStep(n) {
+  for(let i=1;i<=4;i++) {
+    const el = document.getElementById('rstep'+i);
+    if(el) el.className = 'step' + (i<n?' done':i===n?' active':'');
+  }
+}
+
+async function buscarReceita() {
+  const key = document.getElementById('nibo-key').value.trim();
+  const ini = document.getElementById('data-ini').value;
+  const fim = document.getElementById('data-fim').value;
+  if(!key){ alert('Informe a chave API do Nibo'); return; }
+
+  document.getElementById('rcard-log').style.display='block';
+  document.getElementById('rlog').innerHTML='';
+  setRStep(2);
+
+  rlog(`Período: ${ini} a ${fim}`);
+  rlog('Conectando ao Nibo...');
+
+  const base = 'https://api.nibo.com.br/empresas/v1';
+  const filter = `dueDate ge ${ini} and dueDate le ${fim}`;
+
+  const PROXIES = [
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  ];
+
+  async function fetchNiboR(rota) {
+    const url = `${base}/${rota}?apitoken=${key}&$filter=${encodeURIComponent(filter)}&$orderby=dueDate&$top=500`;
+    for(const makeProxy of PROXIES) {
+      try {
+        const proxy = makeProxy(url);
+        const resp = await fetch(proxy);
+        const text = await resp.text();
+        let jsonStr = text;
+        try { const wrap = JSON.parse(text); if(wrap.contents) jsonStr = wrap.contents; } catch(e){}
+        const json = JSON.parse(jsonStr);
+        return json.items || (Array.isArray(json)?json:[]);
+      } catch(e) {
+        rlog(`Proxy falhou, tentando próximo...`, 'warn');
+      }
+    }
+    rlog(`Erro: todos os proxies falharam`, 'err');
+    return null;
+  }
+
+  rlog('Buscando créditos (receita)...');
+  const creditos = await fetchNiboR('schedules/credit');
+  if(!creditos) { rlog('Falha ao buscar receita', 'err'); return; }
+  rlog(`${creditos.length} créditos encontrados`, 'ok');
+
+  // Montar dados — tudo começa como consultoria
+  dadosReceita2 = creditos.map(d => {
+    const catRaw = d.categoryName || d.category || '';
+    const cat = typeof catRaw === 'object' ? (catRaw.name || '') : catRaw;
+    const desc = d.description || d.name || '';
+    // Tag explícita tem prioridade
+    const tag = extrairTag(desc);
+    let categoria = tag || 'consultoria';
+    return {
+      mes: ini.substring(0,7)+'-01',
+      categoria,
+      realizado: Math.abs(parseFloat(d.value||d.amount||0)),
+      descricao: (cat ? cat + ' | ' : '') + limparDescricao(desc),
+      removido: false,
+    };
+  });
+
+  mostrarPreviewReceita();
+  setRStep(3);
+}
+
+function mostrarPreviewReceita() {
+  document.getElementById('rcard-preview').style.display='block';
+  recalcularResumoReceita();
+  rlog('Preview pronto — revise e confirme para salvar', 'ok');
+}
+
+function recalcularResumoReceita() {
+  const totais = {}, contagem = {};
+  for(const r of dadosReceita2) {
+    if(r.removido) continue;
+    totais[r.categoria] = (totais[r.categoria]||0) + r.realizado;
+    contagem[r.categoria] = (contagem[r.categoria]||0) + 1;
+  }
+  const ativos = dadosReceita2.filter(r=>!r.removido);
+  let html = `<thead><tr><th>Categoria</th><th>Qtd lançamentos</th><th style="text-align:right">Total</th></tr></thead><tbody>`;
+  let grand = 0;
+  for(const [cat, total] of Object.entries(totais).sort()) {
+    grand += total;
+    html += `<tr><td><span class="badge badge-${cat}">${cat}</span></td><td>${contagem[cat]} lançamentos</td><td style="text-align:right">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`;
+  }
+  html += `<tr class="total-row"><td>Total</td><td>${ativos.length} lançamentos</td><td style="text-align:right">R$ ${grand.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr></tbody>`;
+  document.getElementById('rtable-resumo').innerHTML = html;
+}
+
+function toggleDetalheReceita() {
+  const el = document.getElementById('rdetalhe');
+  if(el.style.display === 'none') {
+    let html = `<thead><tr><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th><th></th></tr></thead><tbody>`;
+    dadosReceita2.forEach((r, idx) => {
+      if(r.removido) return;
+      const opts = CAT_RECEITA.map(c => `<option value="${c}"${c===r.categoria?' selected':''}>${c}</option>`).join('');
+      html += `<tr id="rrow-${idx}">
+        <td style="font-size:10px;color:var(--muted);">${r.descricao}</td>
+        <td>
+          <span class="badge badge-${r.categoria}" id="rbadge-${idx}">${r.categoria}</span>
+          <select class="cat-select" onchange="mudarCatReceita(${idx}, this.value)">${opts}</select>
+        </td>
+        <td style="text-align:right">R$ ${r.realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+        <td><button class="btn-x" onclick="removerReceita(${idx})" title="Remover">×</button></td>
+      </tr>`;
+    });
+    html += '</tbody>';
+    document.getElementById('rtable-detalhe').innerHTML = html;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function mudarCatReceita(idx, novaCat) {
+  dadosReceita2[idx].categoria = novaCat;
+  const badge = document.getElementById(`rbadge-${idx}`);
+  if(badge) { badge.className = `badge badge-${novaCat}`; badge.textContent = novaCat; }
+  recalcularResumoReceita();
+}
+
+function removerReceita(idx) {
+  dadosReceita2[idx].removido = true;
+  const row = document.getElementById(`rrow-${idx}`);
+  if(row) row.remove();
+  recalcularResumoReceita();
+  rlog(`Lançamento removido: ${dadosReceita2[idx].descricao}`, 'warn');
+}
+
+async function salvarReceita() {
+  const btn = document.getElementById('rbtn-salvar');
+  btn.disabled = true;
+  document.getElementById('rstatus-save').textContent = 'Salvando...';
+  setRStep(4);
+
+  const rows = dadosReceita2
+    .filter(r => !r.removido)
+    .map(({descricao, removido, ...r}) => r);
+
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/receita`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify(rows),
+  });
+
+  if(resp.ok || resp.status===201) {
+    document.getElementById('rstatus-save').style.color='var(--gl)';
+    document.getElementById('rstatus-save').textContent = `✓ ${rows.length} registros salvos!`;
+    rlog(`${rows.length} registros de receita salvos no Supabase!`, 'ok');
+  } else {
+    const err = await resp.text();
+    document.getElementById('rstatus-save').style.color='var(--danger)';
+    document.getElementById('rstatus-save').textContent = '✗ Erro ao salvar';
+    rlog(`Erro Supabase: ${resp.status} — ${err}`, 'err');
+    btn.disabled = false;
+  }
+}
+
+function resetarReceita() {
+  dadosReceita2=[];
+  document.getElementById('rcard-log').style.display='none';
+  document.getElementById('rcard-preview').style.display='none';
+  document.getElementById('rlog').innerHTML='';
+  document.getElementById('rbtn-salvar').disabled=false;
+  document.getElementById('rstatus-save').textContent='';
+  setRStep(1);
 }
 
 function resetar() {
