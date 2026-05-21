@@ -460,6 +460,24 @@ async function salvarSupabase() {
   // Remover campo descricao antes de salvar (não é coluna da tabela)
   const rows = dadosCustos.filter(r => !r.removido).map(({descricao, descricao_raw, removido, regra, ...r}) => r);
 
+  const mes = rows[0]?.mes;
+
+  // Apagar registros do mesmo mês antes de inserir
+  log(`Limpando custos de ${mes}...`, 'info');
+  const delResp = await fetch(`${SUPABASE_URL}/rest/v1/custos?mes=eq.${mes}`, {
+    method: 'DELETE',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'return=minimal',
+    },
+  });
+  if(!delResp.ok) {
+    log(`Aviso: erro ao limpar registros anteriores`, 'warn');
+  } else {
+    log(`Registros anteriores de ${mes} removidos`, 'ok');
+  }
+
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/custos`, {
     method: 'POST',
     headers: {
@@ -473,7 +491,7 @@ async function salvarSupabase() {
 
   if(resp.ok || resp.status===201) {
     document.getElementById('status-save').style.color='var(--gl)';
-    document.getElementById('status-save').textContent = `✓ ${rows.length} registros salvos no Supabase!`;
+    document.getElementById('status-save').textContent = `✓ ${rows.length} registros salvos!`;
     log(`${rows.length} custos inseridos no Supabase com sucesso!`, 'ok');
   } else {
     const err = await resp.text();
@@ -825,6 +843,24 @@ async function salvarReceita() {
   const rows = dadosReceita2
     .filter(r => !r.removido)
     .map(({descricao, removido, ...r}) => r); // empresa já está em r
+
+  const mes = rows[0]?.mes;
+
+  // Apagar registros do mesmo mês (todas as empresas) antes de inserir
+  rlog(`Limpando receita de ${mes}...`, 'info');
+  const delResp = await fetch(`${SUPABASE_URL}/rest/v1/receita?mes=eq.${mes}`, {
+    method: 'DELETE',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'return=minimal',
+    },
+  });
+  if(!delResp.ok) {
+    rlog(`Aviso: erro ao limpar registros anteriores`, 'warn');
+  } else {
+    rlog(`Registros anteriores de ${mes} removidos`, 'ok');
+  }
 
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/receita`, {
     method: 'POST',
