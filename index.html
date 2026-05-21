@@ -736,11 +736,13 @@ async function buscarReceita() {
     if(empresa === 'AUGE') categoria = tag || 'crossell';
     if(empresa === 'OPC') categoria = tag || 'distribuicao';
 
+    const nome = d.name || d.customerName || d.contactName || (typeof d.contact === 'object' ? (d.contact?.name || '') : (d.contact || '')) || '';
     return {
       mes: ini.substring(0,7)+'-01',
       empresa,
       categoria,
       realizado: Math.abs(parseFloat(d.value||d.amount||0)),
+      nome: nome.trim(),
       descricao: (cat ? cat + ' | ' : '') + limparDescricao(desc) + (conta ? ' [' + conta + ']' : ''),
       removido: false,
     };
@@ -842,7 +844,7 @@ async function salvarReceita() {
 
   const rows = dadosReceita2
     .filter(r => !r.removido)
-    .map(({descricao, removido, ...r}) => r); // empresa já está em r
+    .map(({descricao, removido, ...r}) => r); // nome e empresa já estão em r
 
   const mes = rows[0]?.mes;
 
