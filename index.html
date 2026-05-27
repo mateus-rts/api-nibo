@@ -11,7 +11,7 @@
   --black:#1A1A1B;--green:#3D754E;--gl:#5a9e6f;--gl2:#a3d9b1;
   --ow:#F9F5EF;--gray:#2e2e2f;--gray2:#3d3d3e;--muted:#a0a0a0;
   --border:rgba(255,255,255,0.08);--warn:#f0b429;--danger:#f87171;
-}
+}h
 body{font-family:'Ubuntu',sans-serif;background:var(--black);color:var(--ow);min-height:100vh;padding:2rem;}
 .header{display:flex;align-items:center;gap:12px;margin-bottom:2rem;}
 .logo{display:flex;align-items:center;gap:8px;}
@@ -736,7 +736,7 @@ async function buscarReceita() {
     if(empresa === 'AUGE') categoria = tag || 'crossell';
     if(empresa === 'OPC') categoria = tag || 'distribuicao';
 
-    const nome = d.name || d.customerName || d.contactName || (typeof d.contact === 'object' ? (d.contact?.name || '') : (d.contact || '')) || '';
+    const nome = d.stakeholder?.name || d.name || d.customerName || d.contactName || (typeof d.contact === 'object' ? (d.contact?.name || '') : (d.contact || '')) || '';
     return {
       mes: ini.substring(0,7)+'-01',
       empresa,
